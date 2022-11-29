@@ -9,6 +9,9 @@ unit Unit1;
   When run under the debugger, you will see a lot of (handled) Exceptions,
   so, Not recommended.  Try Ctrl-Shift-F9 if you must run in the IDE.
     David Bannon, Nov 2022.
+
+  History -
+    2022-11-30 Initial Release
 }
 
 interface
@@ -92,8 +95,6 @@ begin
 end;
 
 procedure   TFormExMetaFile.ClearFields();
-var
-    Ctrl : TControl;
 begin
          EditName.Text := '';
          EditKeyWords.Text := '';
@@ -167,6 +168,7 @@ procedure TFormExMetaFile.BitBtnSaveClick(Sender: TObject);
 var
     ErrorLine : string = '';
     JContent : string;
+    OldFFileName : string;
 
     function SaveString(FFName : string) : boolean;
     var
@@ -190,7 +192,13 @@ begin
     if (ExtractFileNameOnly(LabelFileName.Caption) <> EditName.Text) and
         (QuestionDlg('Project Filename Mismatch', 'Make the Filename match the project ?', mtConfirmation, [mrYes, mrNo], '') = mrYes)
          then begin
-             LabelFileName.Caption := AppendPathDelim(ExtractFileDir(LabelFileName.Caption)) + EditName.Text + MetaFileExt;
+             OldFFileName := LabelFileName.Caption;
+             LabelFileName.Caption := AppendPathDelim(ExtractFileDir(LabelFileName.Caption))
+                + lowercase(EditName.Text).Replace(' ', '_', [rfReplaceAll]) + MetaFileExt;
+             if FileExists(OldFFileName) and
+                (QuestionDlg('Remove old metadata file ?', OldFFileName
+                        , mtConfirmation, [mrYes, mrNo], '') = mrYes) then
+                DeleteFileUTF8(OldfFileName);
          end;
     if SaveString(LabelFileName.caption) then begin
         StatusBar1.SimpleText := 'Updated ' + LabelFileName.caption;
@@ -255,8 +263,10 @@ begin
     if Sender.Equals(TObject(EditName))
         and (length(EditName.Text) > 2)
         and NoFileNameYet then begin
-            LabelFileName.Caption := LabelFileName.Caption + EditName.Text + MetaFileExt;
+            LabelFileName.Caption := LabelFileName.Caption
+                + lowercase(EditName.Text).Replace(' ', '_', [rfReplaceAll]) + MetaFileExt;
             StatusBar1.SimpleText := 'New Metadata Filename determined';
+            NoFileNameYet := false;
         end;
 end;
 
