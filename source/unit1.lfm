@@ -226,6 +226,11 @@ object FormExMetaFile: TFormExMetaFile
     ItemHeight = 0
     Items.Strings = (
       'Beginner'
+      'General'
+      'OPM'
+      'TAChart'
+      'DBase'
+      'LazReport'
     )
     OnChange = EditNameChange
     OnEditingDone = EditNameEditingDone
