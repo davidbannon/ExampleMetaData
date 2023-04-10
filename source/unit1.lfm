@@ -580,7 +580,7 @@ object FormExMetaFile: TFormExMetaFile
     Height = 21
     Top = 402
     Width = 98
-    Caption = 'Version 1.01'
+    Caption = 'Version 1.02'
   end
   object OpenDialog1: TOpenDialog
     DefaultExt = '.ex-meta'
