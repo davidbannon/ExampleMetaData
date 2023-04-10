@@ -68,7 +68,6 @@ type
         NoFileNameYet : boolean;
         function BuildJSON: string;
         procedure ClearFields();
-        function NormaliseKeyWords(): string;
         function RenderKeyWords: boolean;
         function TestJSON: boolean;
         procedure FReady(SetTo : boolean);
@@ -289,11 +288,6 @@ begin
              + '"}'#10'}';                                    // Now contains a JSON File
 end;
 
-function TFormExMetaFile.NormaliseKeyWords() : string;
-begin
-
-end;
-
 { A term can contain one or more words, comma seperate terms.}
 
 function TFormExMetaFile.RenderKeyWords : boolean;
@@ -306,8 +300,10 @@ begin
     St := EditKeyWords.Caption;
     St := St.Replace('"', '', [rfReplaceAll]);
     St := St.Replace(', ', ',', [rfReplaceAll]);
+    if St = '' then exit;
     while St[length(St)] = ' ' do
         delete(St, length(St), 1);
+    if St = '' then exit;
     if St[length(St)] = ',' then
         delete(St, length(St), 1);
     LabelKeyRender.Caption := '';
