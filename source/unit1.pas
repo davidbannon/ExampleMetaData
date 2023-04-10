@@ -12,6 +12,7 @@ unit Unit1;
 
   History -
     2022-11-30 Initial Release
+    2023-04-10 Parse the keywords so user does not have to put in double inverted commas
 }
 
 interface
@@ -33,6 +34,9 @@ type
         ComboCategory: TComboBox;
         EditName: TEdit;
         EditKeyWords: TEdit;
+        Label1: TLabel;
+        LabelKeyWordJSON: TLabel;
+        LabelKeyRender: TLabel;
         LabelDirty: TLabel;
         LabelFileName: TLabel;
         LabelDescription: TLabel;
@@ -64,6 +68,8 @@ type
         NoFileNameYet : boolean;
         function BuildJSON: string;
         procedure ClearFields();
+        function NormaliseKeyWords(): string;
+        function RenderKeyWords: boolean;
         function TestJSON: boolean;
         procedure FReady(SetTo : boolean);
         property Ready : boolean read ReadyV write FReady;
@@ -149,13 +155,14 @@ begin
             end else StatusBar1.SimpleText := '';
             Memo1.Text := Desc;
             //FormDump.InString := Desc;      // Thats in case user presses the dump button later on
-            EditKeywords.Text := Keys;
+            EditKeywords.Text := Keys.Replace('"', '', [rfReplaceAll]);
             ComboCategory.Text := Cat;
             EditName.Text := ExName;
             LabelFileName.Caption := OpenDialog1.FileName;
             LabelDirty.Caption := ' ';
             BitBtnSave.Enabled := False;
             NoFileNameYet := false;
+            TestJSON();
         finally
             STL.Free;
             EXD.Free;
@@ -276,9 +283,52 @@ function TFormExMetaFile.BuildJSON : string;
 begin
     result := '{ "' + TExampleData.EscJSON(EditName.Text) + '" : {'
              +     #10'   "Category" : "' + TExampleData.EscJSON(ComboCategory.text)
-             + '",'#10'   "Keywords" : [' + EditKeyWords.Text + ']'
+             + '",'#10'   "Keywords" : [' + LabelKeyRender.Caption + ']'
+//             + '",'#10'   "Keywords" : [' + EditKeyWords.Text + ']'
              +  ','#10'   "Description" : "' + TExampleData.EscJSON(Memo1.Text)
              + '"}'#10'}';                                    // Now contains a JSON File
+end;
+
+function TFormExMetaFile.NormaliseKeyWords() : string;
+begin
+
+end;
+
+{ A term can contain one or more words, comma seperate terms.}
+
+function TFormExMetaFile.RenderKeyWords : boolean;
+var
+    i : integer;
+    St : string;
+begin
+    Result := false;
+    // Clean up, remove ", remove spaces after comma, trailing spaces, trailing commas
+    St := EditKeyWords.Caption;
+    St := St.Replace('"', '', [rfReplaceAll]);
+    St := St.Replace(', ', ',', [rfReplaceAll]);
+    while St[length(St)] = ' ' do
+        delete(St, length(St), 1);
+    if St[length(St)] = ',' then
+        delete(St, length(St), 1);
+    LabelKeyRender.Caption := '';
+    if length(St) < 2 then
+        exit;
+    writeln('----------');
+    LabelKeyRender.Caption := '"';
+    for i := 1 to length(St) do begin
+        writeln('TFormExMetaFile.RenderKeyWords [' + St[i] + '] i=' + inttostr(i) + ' len=' + inttostr(length(St)));
+        if St[i] = ',' then begin    // allow for two possibilities, comma at end or mid sentance
+            if i = length(St) then
+                LabelKeyRender.Caption := LabelKeyRender.Caption + '"'
+            else
+                LabelKeyRender.Caption := LabelKeyRender.Caption + '", "';
+        end else
+           LabelKeyRender.Caption := LabelKeyRender.Caption + St[i];
+        writeln('--- done ---');
+    end;
+    if LabelKeyRender.Caption[length(LabelKeyRender.Caption)] <> '"' then
+        LabelKeyRender.Caption := LabelKeyRender.Caption + '"';
+    result := (length(LabelKeyRender.Caption) > 4);
 end;
 
 function TFormExMetaFile.TestJSON : boolean;
@@ -287,6 +337,10 @@ var
     JContent, ErrorLine, Category  : string;
 begin
     result := true;
+    if not RenderKeyWords then begin
+        StatusBar1.SimpleText := 'Invalid JSON in Key Words';
+        exit(false);
+    end;
     JContent := BuildJSON;
     EXD := TExampleData.Create();
     try
@@ -314,6 +368,7 @@ begin
    Ready := False;
    LabelFileName.Caption := '';
    StatusBar1.SimpleText := 'Probably a good idea to click New or Open';
+   LabelKeyRender.Caption := '';
 end;
 
 procedure TFormExMetaFile.SpeedHelpCatClick(Sender: TObject);
