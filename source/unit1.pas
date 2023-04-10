@@ -309,10 +309,8 @@ begin
     LabelKeyRender.Caption := '';
     if length(St) < 2 then
         exit;
-    writeln('----------');
     LabelKeyRender.Caption := '"';
     for i := 1 to length(St) do begin
-        writeln('TFormExMetaFile.RenderKeyWords [' + St[i] + '] i=' + inttostr(i) + ' len=' + inttostr(length(St)));
         if St[i] = ',' then begin    // allow for two possibilities, comma at end or mid sentance
             if i = length(St) then
                 LabelKeyRender.Caption := LabelKeyRender.Caption + '"'
@@ -320,7 +318,6 @@ begin
                 LabelKeyRender.Caption := LabelKeyRender.Caption + '", "';
         end else
            LabelKeyRender.Caption := LabelKeyRender.Caption + St[i];
-        writeln('--- done ---');
     end;
     if LabelKeyRender.Caption[length(LabelKeyRender.Caption)] <> '"' then
         LabelKeyRender.Caption := LabelKeyRender.Caption + '"';
