@@ -231,6 +231,7 @@ object FormExMetaFile: TFormExMetaFile
       'TAChart'
       'DBase'
       'LazReport'
+      'ThirdParty'
     )
     OnChange = EditNameChange
     OnEditingDone = EditNameEditingDone
@@ -580,7 +581,7 @@ object FormExMetaFile: TFormExMetaFile
     Height = 21
     Top = 402
     Width = 98
-    Caption = 'Version 1.03'
+    Caption = 'Version 1.04'
   end
   object OpenDialog1: TOpenDialog
     DefaultExt = '.ex-meta'
