@@ -26,6 +26,7 @@ type
     { TFormExMetaFile }
 
     TFormExMetaFile = class(TForm)
+        BitBtnCheckLPK: TBitBtn;
         BitBtnSpell: TBitBtn;
         BitBtnNew: TBitBtn;
         BitBtnOpen: TBitBtn;
@@ -51,6 +52,7 @@ type
         SpeedHelpKeyWords: TSpeedButton;
         SpeedHelpDesc: TSpeedButton;
         StatusBar1: TStatusBar;
+        procedure BitBtnCheckLPKClick(Sender: TObject);
         procedure BitBtnNewClick(Sender: TObject);
         procedure BitBtnOpenClick(Sender: TObject);
         procedure BitBtnSaveClick(Sender: TObject);
@@ -68,9 +70,12 @@ type
         NoFileNameYet : boolean;
         function BuildJSON: string;
         procedure ClearFields();
+        function OpenExistingExample(FFName: string): boolean;
         function RenderKeyWords: boolean;
+        function SuggestRelativeExDir(FLPKFile, FMetadataFile: string): string;
         function TestJSON: boolean;
         procedure FReady(SetTo : boolean);
+//        function TestLPKFile(FullPkgFileName: string): string;
         property Ready : boolean read ReadyV write FReady;
 
     public
@@ -84,7 +89,7 @@ implementation
 
 {$R *.lfm}
 
-uses LazFileUtils, LazLogger, uDebSpell, uShowSpell;
+uses LazFileUtils, FileUtil, LazLogger, uDebSpell, uShowSpell{, Laz2_XMLRead, Laz2_DOM}, uSetExDir;
 
 const VERSION='v0.01';
 
@@ -124,7 +129,10 @@ begin
      end;
      StatusBar1.SimpleText := '';
      Ready := True;
+     BitBtnCheckLPK.Enabled := False;
 end;
+
+
 
 procedure TFormExMetaFile.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
@@ -134,39 +142,50 @@ begin
         then  CanClose := False;
    Ready := True;
 end;
-procedure TFormExMetaFile.BitBtnOpenClick(Sender: TObject);
+
+function  TFormExMetaFile.OpenExistingExample(FFName : string) : boolean;
 var
     STL : TStringList;
     Error, Desc, Keys, Cat, ExName : string;
     EXD : TExampleData;
 begin
+   if not FileExists(FFName) then exit(False);
+   Result := True;
+    EXD := TExampleData.Create;
+    STL := TStringList.Create;
+    Ready := False;
+    try
+        STL.LoadFromFile(FFName);
+        if not EXD.ExtractFieldsFromJSON(STL.Text, ExName, Cat
+                                , Keys , Desc, Error) then begin
+            showmessage(Error); // We will proceed, but its all blank.
+            StatusBar1.SimpleText := Error;
+        end else StatusBar1.SimpleText := '';
+        Memo1.Text := Desc;
+        //FormDump.InString := Desc;      // Thats in case user presses the dump button later on
+        EditKeywords.Text := Keys.Replace('"', '', [rfReplaceAll]);
+        ComboCategory.Text := Cat;
+        EditName.Text := ExName;
+        LabelFileName.Caption := FFName;
+        LabelDirty.Caption := ' ';
+        BitBtnSave.Enabled := False;
+        NoFileNameYet := false;
+        TestJSON();
+    finally
+        STL.Free;
+        EXD.Free;
+        Ready := True;
+        BitBtnCheckLPK.Enabled := True;
+    end;
+    StatusBar1.SimpleText := 'Loaded ' + FFName;
+end;
+
+procedure TFormExMetaFile.BitBtnOpenClick(Sender: TObject);
+begin
+    OpenDialog1.Title := 'Select the Package Metadata File';
     OpenDialog1.Filter := 'Example Metadata |' + '*' + MetaFileExt;
     if OpenDialog1.Execute then begin
-        EXD := TExampleData.Create;
-        STL := TStringList.Create;
-        Ready := False;
-        try
-            STL.LoadFromFile(OpenDialog1.FileName);
-            if not EXD.ExtractFieldsFromJSON(STL.Text, ExName, Cat
-                                    , Keys , Desc, Error) then begin
-                showmessage(Error); // We will proceed, but its all blank.
-                StatusBar1.SimpleText := Error;
-            end else StatusBar1.SimpleText := '';
-            Memo1.Text := Desc;
-            //FormDump.InString := Desc;      // Thats in case user presses the dump button later on
-            EditKeywords.Text := Keys.Replace('"', '', [rfReplaceAll]);
-            ComboCategory.Text := Cat;
-            EditName.Text := ExName;
-            LabelFileName.Caption := OpenDialog1.FileName;
-            LabelDirty.Caption := ' ';
-            BitBtnSave.Enabled := False;
-            NoFileNameYet := false;
-            TestJSON();
-        finally
-            STL.Free;
-            EXD.Free;
-            Ready := True;
-        end;
+        OpenExistingExample(OpenDialog1.FileName);
     end;
 end;
 
@@ -211,6 +230,7 @@ begin
         // DisplayMetaFile(FPathName);
         BitBtnSave.Enabled := false;
         LabelDirty.Caption := ' ';
+        BitBtnCheckLPK.Enabled := True;
     end else Showmessage(ErrorLine);
 end;
 
@@ -354,14 +374,36 @@ begin
 end;
 
 procedure TFormExMetaFile.FormCreate(Sender: TObject);
+var
+    Params : TStringArray;
+    STL : TStringList = nil;
+    None : Array of String = nil;
 begin
     Caption := 'Exampe Metafile Editor ' + VERSION;
-   LabelDirty.Caption := ' ';
-   BitBtnSave.Enabled := False;
-   Ready := False;
-   LabelFileName.Caption := '';
-   StatusBar1.SimpleText := 'Probably a good idea to click New or Open';
-   LabelKeyRender.Caption := '';
+    LabelDirty.Caption := ' ';
+    BitBtnSave.Enabled := False;
+    Ready := False;
+    LabelFileName.Caption := '';
+    StatusBar1.SimpleText := 'Probably a good idea to click New or Open';
+    LabelKeyRender.Caption := '';
+    BitBtnCheckLPK.Enabled := False;
+    Params := Application.GetNonOptions('', None);
+    if length(Params) = 1 then begin
+        if FileExists(Params[0]) and string(Params[0]).EndsWith(MetaFileExt) then begin
+            if FileNameIsAbsolute(Params[0]) then
+                OpenExistingExample(Params[0])
+            else
+                OpenExistingExample(Resolvedots(AppendPathDelim(GetCurrentDir()) + Params[0]));
+       end;
+    end else begin
+        try
+            STL := FindAllFiles('', '*' + MetaFileExt, False);
+            if Stl.Count = 1 then
+                OpenExistingExample(AppendPathDelim(GetCurrentDir()) + Stl[0]);
+        finally
+            Stl.Free;
+        end;
+    end;
 end;
 
 procedure TFormExMetaFile.SpeedHelpCatClick(Sender: TObject);
@@ -384,6 +426,36 @@ begin
     showmessage('A short but meaningful name for this project, no spaces please');
 end;
 
+
+// ============================== L P K    F I L E =============================
+
+function TFormExMetaFile.SuggestRelativeExDir(FLPKFile, FMetaDataFile : string) : string;
+begin
+    Result := CreateRelativePath(FMetaDataFile, extractFilePath(FLPKFile), True);
+    Result := ExtractFilePath(Result);
+end;
+
+procedure TFormExMetaFile.BitBtnCheckLPKClick(Sender: TObject);
+var
+    St : string = '';
+begin
+    OpenDialog1.Title := 'Select the Package File';
+    OpenDialog1.Filter := 'Package File |' + '*.lpk';
+    if OpenDialog1.Execute then begin
+        StatusBar1.SimpleText := '';
+        FormSetExDir.MetadataFile := ExtractFileName(LabelFileName.Caption);
+        FormSetExDir.LabelLPKFile.Caption := OpenDialog1.FileName;
+        St := FormSetExDir.TestLPKFile();
+        if St <> SuggestRelativeExDir(OpenDialog1.FileName, LabelFileName.Caption) then begin
+            if St = '' then ShowMessage('ExamplesDirectory not set')
+            else ShowMessage('ExamplesDirectory appears invalid ' + St);
+            FormSetExDir.Edit1.Text := SuggestRelativeExDir(OpenDialog1.FileName, LabelFileName.Caption);
+            FormSetExDir.ShowModal;                                             // mrOK never works for me !
+            if FormSetExDir.LPKFileUpdated then
+                StatusBar1.SimpleText := 'Package file ExamplesDirectory element updated';
+        end else StatusBar1.SimpleText := 'Package file ExamplesDirectory seems OK';
+    end;
+end;
 
 end.
 

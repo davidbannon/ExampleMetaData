@@ -1,11 +1,11 @@
 object FormExMetaFile: TFormExMetaFile
-  Left = 620
+  Left = 576
   Height = 460
   Top = 294
-  Width = 807
+  Width = 851
   Caption = 'FormExMetaFile'
   ClientHeight = 460
-  ClientWidth = 807
+  ClientWidth = 851
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   LCLVersion = '2.3.0.0'
@@ -14,7 +14,7 @@ object FormExMetaFile: TFormExMetaFile
     AnchorSideRight.Control = BitBtnSpell
     AnchorSideBottom.Control = BitBtnClose
     AnchorSideBottom.Side = asrBottom
-    Left = 483
+    Left = 527
     Height = 30
     Top = 402
     Width = 75
@@ -65,7 +65,7 @@ object FormExMetaFile: TFormExMetaFile
     AnchorSideRight.Control = BitBtnClose
     AnchorSideBottom.Control = BitBtnClose
     AnchorSideBottom.Side = asrBottom
-    Left = 643
+    Left = 687
     Height = 30
     Top = 402
     Width = 75
@@ -115,7 +115,7 @@ object FormExMetaFile: TFormExMetaFile
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = StatusBar1
-    Left = 723
+    Left = 767
     Height = 30
     Top = 402
     Width = 79
@@ -148,7 +148,7 @@ object FormExMetaFile: TFormExMetaFile
     Height = 29
     Hint = 'Short, no spaces please'
     Top = 58
-    Width = 599
+    Width = 643
     Anchors = [akLeft, akRight, akBottom]
     BorderSpacing.Left = 30
     BorderSpacing.Right = 50
@@ -202,7 +202,7 @@ object FormExMetaFile: TFormExMetaFile
     Height = 29
     Hint = 'Words, or groups of words comma seperated'
     Top = 124
-    Width = 599
+    Width = 643
     Anchors = [akLeft, akRight, akBottom]
     OnChange = EditNameChange
     OnEditingDone = EditNameEditingDone
@@ -221,7 +221,7 @@ object FormExMetaFile: TFormExMetaFile
     Height = 29
     Hint = 'Best if you can use an existing one.'
     Top = 91
-    Width = 599
+    Width = 643
     Anchors = [akLeft, akRight, akBottom]
     ItemHeight = 0
     Items.Strings = (
@@ -250,7 +250,7 @@ object FormExMetaFile: TFormExMetaFile
     Left = 20
     Height = 165
     Top = 225
-    Width = 737
+    Width = 781
     Anchors = [akTop, akLeft, akRight, akBottom]
     BorderSpacing.Top = 6
     BorderSpacing.Bottom = 12
@@ -266,7 +266,7 @@ object FormExMetaFile: TFormExMetaFile
     AnchorSideRight.Control = BitBtnOpen
     AnchorSideBottom.Control = BitBtnClose
     AnchorSideBottom.Side = asrBottom
-    Left = 403
+    Left = 447
     Height = 30
     Top = 402
     Width = 75
@@ -317,7 +317,7 @@ object FormExMetaFile: TFormExMetaFile
     AnchorSideRight.Control = BitBtnSave
     AnchorSideBottom.Control = BitBtnClose
     AnchorSideBottom.Side = asrBottom
-    Left = 563
+    Left = 607
     Height = 30
     Top = 402
     Width = 75
@@ -355,7 +355,7 @@ object FormExMetaFile: TFormExMetaFile
     Left = 0
     Height = 23
     Top = 437
-    Width = 807
+    Width = 851
     Panels = <>
     ParentShowHint = False
     ShowHint = True
@@ -367,7 +367,7 @@ object FormExMetaFile: TFormExMetaFile
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = EditName
     AnchorSideBottom.Side = asrBottom
-    Left = 757
+    Left = 801
     Height = 22
     Top = 65
     Width = 23
@@ -415,7 +415,7 @@ object FormExMetaFile: TFormExMetaFile
     AnchorSideLeft.Side = asrBottom
     AnchorSideBottom.Control = ComboCategory
     AnchorSideBottom.Side = asrBottom
-    Left = 757
+    Left = 801
     Height = 22
     Top = 98
     Width = 23
@@ -463,7 +463,7 @@ object FormExMetaFile: TFormExMetaFile
     AnchorSideLeft.Side = asrBottom
     AnchorSideBottom.Control = EditKeyWords
     AnchorSideBottom.Side = asrBottom
-    Left = 757
+    Left = 801
     Height = 21
     Top = 132
     Width = 23
@@ -511,7 +511,7 @@ object FormExMetaFile: TFormExMetaFile
     AnchorSideLeft.Side = asrBottom
     AnchorSideBottom.Control = Memo1
     AnchorSideBottom.Side = asrBottom
-    Left = 757
+    Left = 801
     Height = 26
     Top = 364
     Width = 23
@@ -582,6 +582,21 @@ object FormExMetaFile: TFormExMetaFile
     Top = 402
     Width = 98
     Caption = 'Version 1.04'
+  end
+  object BitBtnCheckLPK: TBitBtn
+    AnchorSideTop.Control = BitBtnClose
+    AnchorSideRight.Control = BitBtnNew
+    AnchorSideBottom.Control = BitBtnClose
+    AnchorSideBottom.Side = asrBottom
+    Left = 303
+    Height = 30
+    Top = 402
+    Width = 139
+    Anchors = [akTop, akRight, akBottom]
+    BorderSpacing.Right = 5
+    Caption = 'Check LPK File'
+    OnClick = BitBtnCheckLPKClick
+    TabOrder = 10
   end
   object OpenDialog1: TOpenDialog
     DefaultExt = '.ex-meta'

@@ -10,7 +10,7 @@ uses
     athreads,
     {$ENDIF}
     Interfaces, // this includes the LCL widgetset
-    Forms, Unit1, uexampledata, uDebSpell, uShowSpell;
+    Forms, Unit1, uexampledata, uDebSpell, uShowSpell, usetexdir;
 
 {$R *.res}
 
@@ -20,6 +20,7 @@ begin
     Application.Initialize;
     Application.CreateForm(TFormExMetaFile, FormExMetaFile);
     Application.CreateForm(TFormSpellCorrections, FormSpellCorrections);
+    Application.CreateForm(TFormSetExDir, FormSetExDir);
     Application.Run;
 end.
 
