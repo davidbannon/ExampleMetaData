@@ -581,7 +581,7 @@ object FormExMetaFile: TFormExMetaFile
     Height = 21
     Top = 402
     Width = 98
-    Caption = 'Version 1.04'
+    Caption = 'Version 1.05'
   end
   object BitBtnCheckLPK: TBitBtn
     AnchorSideTop.Control = BitBtnClose
