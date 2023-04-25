@@ -75,6 +75,9 @@ type
         NoFileNameYet : boolean;
         function BuildJSON: string;
         procedure ClearFields();
+        function GetMetaFile(FullPath: string; Recursive: boolean=false;
+            DesiredIndex: integer=0): string;
+        procedure NewExample(FullPath: string);
         function OpenExistingExample(FFName: string): boolean;
         function RenderKeyWords: boolean;
         function SuggestRelativeExDir(FLPKFile, FMetadataFile: string): string;
@@ -111,11 +114,20 @@ end;
 
 procedure   TFormExMetaFile.ClearFields();
 begin
-         EditName.Text := '';
-         EditKeyWords.Text := '';
-         ComboCategory.Text := '';
-         Memo1.Clear;
-         NoFileNameYet := True;
+    EditName.Text := '';
+    EditKeyWords.Text := '';
+    ComboCategory.Text := '';
+    Memo1.Clear;
+    NoFileNameYet := True;
+end;
+
+procedure TFormExMetaFile.NewExample(FullPath : string);
+begin
+    ClearFields();
+    LabelFileName.Caption := AppendPathDelim(FullPath);
+    StatusBar1.SimpleText := 'Fill in the details above .... ';
+    Ready := True;
+    BitBtnCheckLPK.Enabled := False;
 end;
 
 procedure TFormExMetaFile.BitBtnNewClick(Sender: TObject);
@@ -128,13 +140,16 @@ begin
              exit;
          end;
      SelectDirectoryDialog1.Title := 'Directory for Metadata File';
-     if SelectDirectoryDialog1.Execute then begin
+     if SelectDirectoryDialog1.Execute then
+         NewExample(SelectDirectoryDialog1.Filename);
+
+(*     if SelectDirectoryDialog1.Execute then begin
          ClearFields();
          LabelFileName.Caption := AppendPathDelim(SelectDirectoryDialog1.Filename);
      end;
      StatusBar1.SimpleText := '';
      Ready := True;
-     BitBtnCheckLPK.Enabled := False;
+     BitBtnCheckLPK.Enabled := False;  *)
 end;
 
 
@@ -154,8 +169,8 @@ var
     Error, Desc, Keys, Cat, ExName : string;
     EXD : TExampleData;
 begin
-   if not FileExists(FFName) then exit(False);
-   Result := True;
+    if not FileExists(FFName) then exit(False);
+    Result := True;
     EXD := TExampleData.Create;
     STL := TStringList.Create;
     Ready := False;
@@ -318,7 +333,6 @@ procedure TFormExMetaFile.EditNameEditingDone(Sender: TObject);  // manages chan
 begin
     //debugln('TFormExMetaFile.EditNameEditingDone called');
     if not Ready then exit;
-
     TestJSON;
     if Sender.Equals(TObject(EditName))
         and (length(EditName.Text) > 2)
@@ -333,8 +347,6 @@ begin
             StatusBar1.SimpleText := 'WARNING - non standard Category in use';
             // Save will further give user a hard time.
 end;
-
-
 
 function TFormExMetaFile.BuildJSON : string;
 begin
@@ -412,11 +424,44 @@ begin
     end;
 end;
 
+// Passed an absolute or relative path (with no filename) and returns, if there,
+// a full path to a ex-meta file. If the passed path has a ex-meta file name,
+// then that path is converted to absolute, tested and returned if file present.
+// Path returned is always absolute if anything returned.
+function TFormExMetaFile.GetMetaFile(FullPath : string;
+                    Recursive : boolean= false; DesiredIndex : integer = 0) : string;
+var
+    STL : TStringList = nil;
+    St : string;
+    HaveFileName : boolean = false;
+begin
+    Result := '';
+    if not FullPath.EndsWith(MetaFileExt) then
+        St := AppendPathDelim(FullPath)
+    else HaveFileName := True;
+    if not FileNameIsAbsolute(St) then
+        St := Resolvedots(AppendPathDelim(GetCurrentDir()) + St);
+    if HaveFileName then begin
+        if FileExists(St) then
+            Result := St;
+        exit;
+    end;
+    STL := FindAllFiles(St, '*' + MetaFileExt, Recursive);
+    try
+        if Stl.Count > DesiredIndex then
+            Result := Stl[DesiredIndex];
+    finally
+        Stl.Free;
+    end;
+    debugln('TFormExMetaFile.GetMetaFile returning [' + Result + ']');
+end;
+
 procedure TFormExMetaFile.FormCreate(Sender: TObject);
 var
     Params : TStringArray;
-    STL : TStringList = nil;
     None : Array of String = nil;
+    CLI  : string;
+    FullMFile : string;
 begin
     Caption := 'Exampe Metafile Editor ' + VERSION;
     LabelDirty.Caption := ' ';
@@ -428,21 +473,25 @@ begin
     LabelKeyRender.Caption := '';
     BitBtnCheckLPK.Enabled := False;
     Params := Application.GetNonOptions('', None);
-    if length(Params) = 1 then begin
-        if FileExists(Params[0]) and string(Params[0]).EndsWith(MetaFileExt) then begin
-            if FileNameIsAbsolute(Params[0]) then
-                OpenExistingExample(Params[0])
-            else
-                OpenExistingExample(Resolvedots(AppendPathDelim(GetCurrentDir()) + Params[0]));
-       end;
-    end else begin
-        try
-            STL := FindAllFiles('', '*' + MetaFileExt, False);
-            if Stl.Count = 1 then
-                OpenExistingExample(AppendPathDelim(GetCurrentDir()) + Stl[0]);
-        finally
-            Stl.Free;
+    if length(Params) = 1 then begin                  // look for a ex-meta filename on cli
+        FullMFile := GetMetaFile(Params[0]);          // has user provided full or relative path to a meta file ?
+        if FullMFile <> '' then
+            OpenExistingExample(FullMFile)
+        else begin
+            CLI := Params[0];
+            if  not FileNameIsAbsolute(CLI) then
+                CLI := Resolvedots(AppendPathDelim(GetCurrentDir()) + CLI);
+            if DirectoryExists(CLI) then begin
+                FullMFile := GetMetaFile(CLI);       // does the dir have a meta file already ?
+                if FullMFile <> '' then
+                     OpenExistingExample(FullMFile)
+                else NewExample(CLI);                // OK, we'll make a new one then.
+            end;
         end;
+    end else begin
+        FullMFile := GetMetaFile('');                // Maybe the PWD has a metafile ?
+        if FullMFile <> '' then
+            OpenExistingExample(FullMFile);
     end;
 end;
 
@@ -477,7 +526,8 @@ end;
 
 procedure TFormExMetaFile.BitBtnCheckLPKClick(Sender: TObject);
 var
-    St : string = '';     STL : TStringList = nil;
+    St : string = '';
+    STL : TStringList = nil;
 begin
     OpenDialog1.Title := 'Select the Package File';
     OpenDialog1.Filter := 'Package File |' + '*.lpk';
@@ -485,20 +535,43 @@ begin
         StatusBar1.SimpleText := '';
         FormSetExDir.MetadataFile := ExtractFileName(LabelFileName.Caption);
         FormSetExDir.LabelLPKFile.Caption := OpenDialog1.FileName;
+
+        debugln('TFormExMetaFile.BitBtnCheckLPKClick LabelFileName.Caption ' + LabelFileName.Caption);
+        debugln('TFormExMetaFile.BitBtnCheckLPKClick OpenDialog1.FileName  ' + OpenDialog1.FileName);
+
         St := FormSetExDir.TestLPKFile();
         if St <> SuggestRelativeExDir(OpenDialog1.FileName, LabelFileName.Caption) then begin
-            if St = '' then ShowMessage('ExamplesDirectory not set')
+            // it might be a) Not set; b) set incorrectly; c) set to cope with multiple dirs (and is OK)
+            if St = '' then
+                ShowMessage('ExamplesDirectory not set')
             else begin                           // its possible there are several example directories below here.....
+                St := ResolveDots(ExtractFilePath(OpenDialog1.FileName) + FormSetExDir.TestLPKFile());          // Absolute Path
+                if '' <> GetMetaFile(St, True, 1) then begin         // If we have a second meta file .....
+                    StatusBar1.SimpleText := 'Package file ExamplesDirectory has multiple examples, all good.';     // better testing here required ??
+                    exit;
+                end;
+
+
+(*
+                debugln('TFormExMetaFile.BitBtnCheckLPKClick St  ' + St);
+
                 STL := FindAllFiles(St, '*' + MetaFileExt, true);
-                if Stl.Count < 2 then begin
-                    ShowMessage('ExamplesDirectory appears invalid ' + St);
-                    FormSetExDir.Edit1.Text := SuggestRelativeExDir(OpenDialog1.FileName, LabelFileName.Caption);
-                    FormSetExDir.ShowModal;                                             // mrOK never works for me !
-                    if FormSetExDir.LPKFileUpdated then
-                        StatusBar1.SimpleText := 'Package file ExamplesDirectory element updated';
-                end else StatusBar1.SimpleText := 'Package file ExamplesDirectory seems OK, multiple examples.';
+                try
+                    debugln('TFormExMetaFile.BitBtnCheckLPKClick Count  ' + inttostr(STL.Count));
+                    if Stl.Count > 1 then begin
+                        StatusBar1.SimpleText := 'Package file ExamplesDirectory has multiple examples.';     // better testing here required ??
+                        exit;
+                    end;
+                finally
+                    STL.Free;
+                end;        *)
+                ShowMessage('ExamplesDirectory element needs attention')
             end;
-        end else StatusBar1.SimpleText := 'Package file ExamplesDirectory seems OK';
+            FormSetExDir.Edit1.Text := SuggestRelativeExDir(OpenDialog1.FileName, LabelFileName.Caption);
+            FormSetExDir.ShowModal;                                             // mrOK never works for me !
+            if FormSetExDir.LPKFileUpdated then
+                StatusBar1.SimpleText := 'Package file ExamplesDirectory element updated';
+        end else StatusBar1.SimpleText := 'Package file ExamplesDirectory element seems OK';
     end;
 end;
 
