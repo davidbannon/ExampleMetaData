@@ -16,7 +16,7 @@ uses
 
 begin
     RequireDerivedFormResource := True;
-    Application.Scaled := True;
+    Application.Scaled:=True;
     Application.Initialize;
     Application.CreateForm(TFormExMetaFile, FormExMetaFile);
     Application.CreateForm(TFormSpellCorrections, FormSpellCorrections);

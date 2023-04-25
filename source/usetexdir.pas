@@ -33,6 +33,7 @@ type
     public
         MetadataFile : string;
         LPKFileUpdated : boolean;
+        // Returns the value of the XML ExamplesDirectory element, '' if blank or not found
         function TestLPKFile(): string;
         // Sets the ExamplesDirectory Element in PackageFile to passed value, happy to create it if necessary.
         function SetExDirXML(LPKFileName, ValueSt: String): boolean;
@@ -145,7 +146,6 @@ begin
     ImageTick.Visible := True;
     ImageCross.Visible := False;
 end;
-
 
 function TFormSetExDir.TestLPKFile: string;
 var

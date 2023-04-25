@@ -1,7 +1,7 @@
 object FormExMetaFile: TFormExMetaFile
-  Left = 576
+  Left = 169
   Height = 460
-  Top = 294
+  Top = 206
   Width = 851
   Caption = 'FormExMetaFile'
   ClientHeight = 460
@@ -227,7 +227,6 @@ object FormExMetaFile: TFormExMetaFile
     Items.Strings = (
       'Beginner'
       'General'
-      'OPM'
       'TAChart'
       'DBase'
       'LazReport'
@@ -585,10 +584,10 @@ object FormExMetaFile: TFormExMetaFile
   end
   object BitBtnCheckLPK: TBitBtn
     AnchorSideTop.Control = BitBtnClose
-    AnchorSideRight.Control = BitBtnNew
+    AnchorSideRight.Control = BitBtnSaveAs
     AnchorSideBottom.Control = BitBtnClose
     AnchorSideBottom.Side = asrBottom
-    Left = 303
+    Left = 223
     Height = 30
     Top = 402
     Width = 139
@@ -597,6 +596,21 @@ object FormExMetaFile: TFormExMetaFile
     Caption = 'Check LPK File'
     OnClick = BitBtnCheckLPKClick
     TabOrder = 10
+  end
+  object BitBtnSaveAs: TBitBtn
+    AnchorSideTop.Control = BitBtnClose
+    AnchorSideRight.Control = BitBtnNew
+    AnchorSideBottom.Control = BitBtnClose
+    AnchorSideBottom.Side = asrBottom
+    Left = 367
+    Height = 30
+    Top = 402
+    Width = 75
+    Anchors = [akTop, akRight]
+    BorderSpacing.Right = 5
+    Caption = 'Save As'
+    OnClick = BitBtnSaveAsClick
+    TabOrder = 11
   end
   object OpenDialog1: TOpenDialog
     DefaultExt = '.ex-meta'

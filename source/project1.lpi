@@ -59,6 +59,12 @@
             <CompilerMessages>
               <IgnoredMessages idx6058="True"/>
             </CompilerMessages>
+            <CustomOptions Value="-dEXTESTMODE
+-dAPPEXMETADATA"/>
+            <OtherDefines Count="2">
+              <Define0 Value="EXTESTMODE"/>
+              <Define1 Value="APPEXMETADATA"/>
+            </OtherDefines>
           </Other>
         </CompilerOptions>
       </Item2>
@@ -94,6 +100,12 @@
             <CompilerMessages>
               <IgnoredMessages idx6058="True"/>
             </CompilerMessages>
+            <CustomOptions Value="-dEXTESTMODE
+-dAPPEXMETADATA"/>
+            <OtherDefines Count="2">
+              <Define0 Value="EXTESTMODE"/>
+              <Define1 Value="APPEXMETADATA"/>
+            </OtherDefines>
           </Other>
         </CompilerOptions>
       </Item3>
@@ -128,6 +140,7 @@
       <Unit2>
         <Filename Value="uexampledata.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="uExampleData"/>
       </Unit2>
       <Unit3>
         <Filename Value="udebspell.pas"/>
@@ -174,6 +187,12 @@
       <CompilerMessages>
         <IgnoredMessages idx6058="True"/>
       </CompilerMessages>
+      <CustomOptions Value="-dEXTESTMODE
+-dAPPEXMETADATA"/>
+      <OtherDefines Count="2">
+        <Define0 Value="EXTESTMODE"/>
+        <Define1 Value="APPEXMETADATA"/>
+      </OtherDefines>
     </Other>
   </CompilerOptions>
 </CONFIG>

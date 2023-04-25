@@ -13,6 +13,9 @@ unit Unit1;
   History -
     2022-11-30 Initial Release
     2023-04-10 Parse the keywords so user does not have to put in double inverted commas
+    2023-04-24 Edit PackageFile for user, command line parameter of ex-metadata file.
+    2023-04-25 Add Save As, allow dir above multiple example dir.
+    2023-04-25 Check cat is in list, if not, nag user on EVERY save.
 }
 
 interface
@@ -26,6 +29,7 @@ type
     { TFormExMetaFile }
 
     TFormExMetaFile = class(TForm)
+        BitBtnSaveAs: TBitBtn;
         BitBtnCheckLPK: TBitBtn;
         BitBtnSpell: TBitBtn;
         BitBtnNew: TBitBtn;
@@ -55,6 +59,7 @@ type
         procedure BitBtnCheckLPKClick(Sender: TObject);
         procedure BitBtnNewClick(Sender: TObject);
         procedure BitBtnOpenClick(Sender: TObject);
+        procedure BitBtnSaveAsClick(Sender: TObject);
         procedure BitBtnSaveClick(Sender: TObject);
         procedure BitBtnSpellClick(Sender: TObject);
         procedure EditNameChange(Sender: TObject);
@@ -169,6 +174,7 @@ begin
         LabelFileName.Caption := FFName;
         LabelDirty.Caption := ' ';
         BitBtnSave.Enabled := False;
+        BitBtnSaveAs.Enabled := True;
         NoFileNameYet := false;
         TestJSON();
     finally
@@ -187,6 +193,29 @@ begin
     if OpenDialog1.Execute then begin
         OpenExistingExample(OpenDialog1.FileName);
     end;
+end;
+
+// We offere a dirSelectDialog, clear the title. If chosen dir already has a ex-meta
+// we ignore, SEP.
+procedure TFormExMetaFile.BitBtnSaveAsClick(Sender: TObject);
+begin
+    Ready := False;
+    if (LabelDirty.caption = '*') and
+        (QuestionDlg('Unsaved Content', 'Proceed without saving ?', mtConfirmation, [mrYes, mrNo], '') = mrNo)
+         then  begin
+             Ready := True;
+             exit;
+         end;
+     SelectDirectoryDialog1.Title := 'Directory for Metadata File';
+     if SelectDirectoryDialog1.Execute then begin
+         EditName.Hint := 'was ' + EditName.Text;         // Saving will reset to default
+         EditName.Text := '';
+         LabelFileName.Caption := AppendPathDelim(SelectDirectoryDialog1.Filename);
+         NoFileNameYet := True;
+     end;
+     StatusBar1.SimpleText := '';
+     Ready := True;
+     BitBtnCheckLPK.Enabled := False;
 end;
 
 procedure TFormExMetaFile.BitBtnSaveClick(Sender: TObject);
@@ -213,6 +242,9 @@ var
     end;
 
 begin
+    if ComboCategory.Items.IndexOf(ComboCategory.Text) < 0 then
+        if (QuestionDlg('Warning "' + ComboCategory.Text + '"', 'That is not a std category, are you sure ?', mtConfirmation, [mrYes, mrNo], '') = mrNo) then
+            exit;
     JContent := BuildJSON();                                // Assuming content is OK if button enabled ??
     if (ExtractFileNameOnly(LabelFileName.Caption) <> EditName.Text) and
         (QuestionDlg('Project Filename Mismatch', 'Make the Filename match the project ?', mtConfirmation, [mrYes, mrNo], '') = mrYes)
@@ -226,6 +258,7 @@ begin
                 DeleteFileUTF8(OldfFileName);
          end;
     if SaveString(LabelFileName.caption) then begin
+        EditName.Hint := 'Short, no spaces please';             // Because Save As may have set it to old name
         StatusBar1.SimpleText := 'Updated ' + LabelFileName.caption;
         // DisplayMetaFile(FPathName);
         BitBtnSave.Enabled := false;
@@ -281,10 +314,11 @@ begin
     BitBtnSave.Enabled := TestJson();
 end;
 
-procedure TFormExMetaFile.EditNameEditingDone(Sender: TObject);
+procedure TFormExMetaFile.EditNameEditingDone(Sender: TObject);  // manages change in all i/p fields
 begin
     //debugln('TFormExMetaFile.EditNameEditingDone called');
     if not Ready then exit;
+
     TestJSON;
     if Sender.Equals(TObject(EditName))
         and (length(EditName.Text) > 2)
@@ -294,6 +328,10 @@ begin
             StatusBar1.SimpleText := 'New Metadata Filename determined';
             NoFileNameYet := false;
         end;
+    if Sender.Equals(TObject(ComboCategory)) then
+        if ComboCategory.Items.IndexOf(ComboCategory.Text) < 0 then
+            StatusBar1.SimpleText := 'WARNING - non standard Category in use';
+            // Save will further give user a hard time.
 end;
 
 
@@ -360,6 +398,7 @@ begin
         if EXD.TestJSON(JContent, ErrorLine, Category) then begin    // TestJSON is not a class method
             StatusBar1.SimpleText := 'Good JSON';
             StatusBar1.hint := '';
+            BitBtnSaveAs.Enabled := True;         // once enabled (because user set a Name) it stays enabled.
         end
         else  begin
              StatusBar1.SimpleText := 'Bad JSON';
@@ -382,6 +421,7 @@ begin
     Caption := 'Exampe Metafile Editor ' + VERSION;
     LabelDirty.Caption := ' ';
     BitBtnSave.Enabled := False;
+    BitBtnSaveAs.Enabled := False;
     Ready := False;
     LabelFileName.Caption := '';
     StatusBar1.SimpleText := 'Probably a good idea to click New or Open';
@@ -437,7 +477,7 @@ end;
 
 procedure TFormExMetaFile.BitBtnCheckLPKClick(Sender: TObject);
 var
-    St : string = '';
+    St : string = '';     STL : TStringList = nil;
 begin
     OpenDialog1.Title := 'Select the Package File';
     OpenDialog1.Filter := 'Package File |' + '*.lpk';
@@ -448,11 +488,16 @@ begin
         St := FormSetExDir.TestLPKFile();
         if St <> SuggestRelativeExDir(OpenDialog1.FileName, LabelFileName.Caption) then begin
             if St = '' then ShowMessage('ExamplesDirectory not set')
-            else ShowMessage('ExamplesDirectory appears invalid ' + St);
-            FormSetExDir.Edit1.Text := SuggestRelativeExDir(OpenDialog1.FileName, LabelFileName.Caption);
-            FormSetExDir.ShowModal;                                             // mrOK never works for me !
-            if FormSetExDir.LPKFileUpdated then
-                StatusBar1.SimpleText := 'Package file ExamplesDirectory element updated';
+            else begin                           // its possible there are several example directories below here.....
+                STL := FindAllFiles(St, '*' + MetaFileExt, true);
+                if Stl.Count < 2 then begin
+                    ShowMessage('ExamplesDirectory appears invalid ' + St);
+                    FormSetExDir.Edit1.Text := SuggestRelativeExDir(OpenDialog1.FileName, LabelFileName.Caption);
+                    FormSetExDir.ShowModal;                                             // mrOK never works for me !
+                    if FormSetExDir.LPKFileUpdated then
+                        StatusBar1.SimpleText := 'Package file ExamplesDirectory element updated';
+                end else StatusBar1.SimpleText := 'Package file ExamplesDirectory seems OK, multiple examples.';
+            end;
         end else StatusBar1.SimpleText := 'Package file ExamplesDirectory seems OK';
     end;
 end;
