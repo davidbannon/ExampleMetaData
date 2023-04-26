@@ -131,7 +131,6 @@ begin
         LPKFileUpdated := True;
     end else
         Showmessage('Failed to write to ' + LabelLPKFile.Caption);
-    if ModalResult = mrOK then debugln('TFormSetExDir.BitBtnOKClick mr is TRUE');
     close;
 end;
 

@@ -39,7 +39,7 @@ type
         ComboCategory: TComboBox;
         EditName: TEdit;
         EditKeyWords: TEdit;
-        Label1: TLabel;
+        LabelVersion: TLabel;
         LabelKeyWordJSON: TLabel;
         LabelKeyRender: TLabel;
         LabelDirty: TLabel;
@@ -99,7 +99,7 @@ implementation
 
 uses LazFileUtils, FileUtil, LazLogger, uDebSpell, uShowSpell{, Laz2_XMLRead, Laz2_DOM}, uSetExDir;
 
-const VERSION='v0.01';
+const VERSION='v1.06';
 
 { TFormExMetaFile }
 
@@ -142,17 +142,7 @@ begin
      SelectDirectoryDialog1.Title := 'Directory for Metadata File';
      if SelectDirectoryDialog1.Execute then
          NewExample(SelectDirectoryDialog1.Filename);
-
-(*     if SelectDirectoryDialog1.Execute then begin
-         ClearFields();
-         LabelFileName.Caption := AppendPathDelim(SelectDirectoryDialog1.Filename);
-     end;
-     StatusBar1.SimpleText := '';
-     Ready := True;
-     BitBtnCheckLPK.Enabled := False;  *)
 end;
-
-
 
 procedure TFormExMetaFile.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
@@ -453,7 +443,6 @@ begin
     finally
         Stl.Free;
     end;
-    debugln('TFormExMetaFile.GetMetaFile returning [' + Result + ']');
 end;
 
 procedure TFormExMetaFile.FormCreate(Sender: TObject);
@@ -464,6 +453,7 @@ var
     FullMFile : string;
 begin
     Caption := 'Exampe Metafile Editor ' + VERSION;
+    LabelVersion.Caption := 'Version ' + VERSION;
     LabelDirty.Caption := ' ';
     BitBtnSave.Enabled := False;
     BitBtnSaveAs.Enabled := False;
@@ -527,7 +517,8 @@ end;
 procedure TFormExMetaFile.BitBtnCheckLPKClick(Sender: TObject);
 var
     St : string = '';
-    STL : TStringList = nil;
+    CurrentValue : string;
+    // STL : TStringList = nil;
 begin
     OpenDialog1.Title := 'Select the Package File';
     OpenDialog1.Filter := 'Package File |' + '*.lpk';
@@ -535,43 +526,25 @@ begin
         StatusBar1.SimpleText := '';
         FormSetExDir.MetadataFile := ExtractFileName(LabelFileName.Caption);
         FormSetExDir.LabelLPKFile.Caption := OpenDialog1.FileName;
-
-        debugln('TFormExMetaFile.BitBtnCheckLPKClick LabelFileName.Caption ' + LabelFileName.Caption);
-        debugln('TFormExMetaFile.BitBtnCheckLPKClick OpenDialog1.FileName  ' + OpenDialog1.FileName);
-
-        St := FormSetExDir.TestLPKFile();
-        if St <> SuggestRelativeExDir(OpenDialog1.FileName, LabelFileName.Caption) then begin
+        CurrentValue := FormSetExDir.TestLPKFile();
+        StatusBar1.SimpleText := 'Package file ExamplesDirectory current setting : ' + CurrentValue ;
+        if CurrentValue <> SuggestRelativeExDir(OpenDialog1.FileName, LabelFileName.Caption) then begin
             // it might be a) Not set; b) set incorrectly; c) set to cope with multiple dirs (and is OK)
-            if St = '' then
+            if CurrentValue = '' then
                 ShowMessage('ExamplesDirectory not set')
             else begin                           // its possible there are several example directories below here.....
                 St := ResolveDots(ExtractFilePath(OpenDialog1.FileName) + FormSetExDir.TestLPKFile());          // Absolute Path
                 if '' <> GetMetaFile(St, True, 1) then begin         // If we have a second meta file .....
-                    StatusBar1.SimpleText := 'Package file ExamplesDirectory has multiple examples, all good.';     // better testing here required ??
+                    StatusBar1.SimpleText := 'Package file ExamplesDirectory has multiple examples, all good : ' + CurrentValue;     // better testing here required ??
                     exit;
                 end;
-
-
-(*
-                debugln('TFormExMetaFile.BitBtnCheckLPKClick St  ' + St);
-
-                STL := FindAllFiles(St, '*' + MetaFileExt, true);
-                try
-                    debugln('TFormExMetaFile.BitBtnCheckLPKClick Count  ' + inttostr(STL.Count));
-                    if Stl.Count > 1 then begin
-                        StatusBar1.SimpleText := 'Package file ExamplesDirectory has multiple examples.';     // better testing here required ??
-                        exit;
-                    end;
-                finally
-                    STL.Free;
-                end;        *)
                 ShowMessage('ExamplesDirectory element needs attention')
             end;
             FormSetExDir.Edit1.Text := SuggestRelativeExDir(OpenDialog1.FileName, LabelFileName.Caption);
             FormSetExDir.ShowModal;                                             // mrOK never works for me !
             if FormSetExDir.LPKFileUpdated then
-                StatusBar1.SimpleText := 'Package file ExamplesDirectory element updated';
-        end else StatusBar1.SimpleText := 'Package file ExamplesDirectory element seems OK';
+                StatusBar1.SimpleText := 'Package file ExamplesDirectory element updated : ' + FormSetExDir.Edit1.Text;
+        end else StatusBar1.SimpleText := 'Package file ExamplesDirectory element seems OK : ' + CurrentValue;
     end;
 end;
 
